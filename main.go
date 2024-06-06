@@ -1,6 +1,9 @@
 package main
 
-import "fmt"
+import (
+	"errors"
+	"fmt"
+)
 
 func helloWorld() string {
 	return `Hello World!`
@@ -38,6 +41,21 @@ type StatisticProfit struct {
 	getCurrentProfit        func() float64
 	getDifferenceProfit     func() float64
 	getAllData              func() []float64
+}
+
+type SavingsAccount struct {
+	balance    float64
+	minBalance float64
+}
+
+type Account interface {
+	Deposit(amount float64) error
+	Withdraw(amount float64) error
+	Balance() float64
+}
+
+type CurrentAccount struct {
+	balance float64
 }
 
 func NewStatisticProfit(opts ...func(*StatisticProfit)) Profitable {
@@ -124,6 +142,58 @@ func (s *StatisticProfit) Sum(prices []float64) float64 {
 	return sum
 }
 
+func (c *CurrentAccount) Deposit(amount float64) error {
+	if amount <= 0 {
+		return errors.New("Deposit amount must be positive")
+	}
+	c.balance += amount
+	return nil
+}
+
+func (c *CurrentAccount) Withdraw(amount float64) error {
+	if amount <= 0 {
+		return errors.New("withdrawal amount must be positive")
+	}
+	if c.balance < amount {
+		return errors.New("insufficient funds")
+	}
+	c.balance -= amount
+	return nil
+}
+
+func (c *CurrentAccount) Balance() float64 {
+	return c.balance
+}
+
+func (s *SavingsAccount) Deposit(amount float64) error {
+	if amount <= 0 {
+		return errors.New("Deposit amount must be positive")
+	}
+	s.balance += amount
+	return nil
+}
+
+func (s *SavingsAccount) Withdraw(amount float64) error {
+	if amount <= 0 {
+		return errors.New("withdrawal amount must be positive")
+	}
+	if s.balance-amount < s.minBalance {
+		return errors.New("cannot withdraw, minimum balance requirement not met")
+	}
+	s.balance -= amount
+	return nil
+}
+
+func (s *SavingsAccount) Balance() float64 {
+	return s.balance
+}
+
+func ProcessAccount(a Account) {
+	a.Deposit(500)
+	a.Withdraw(200)
+	fmt.Printf("Balance: %.2f\n", a.Balance())
+}
+
 func main() {
 	resultHelloWorld := helloWorld()
 
@@ -150,4 +220,9 @@ func main() {
 	fmt.Println("Average Profit Percent:", statistic.GetAverageProfitPercent())
 	fmt.Println("Current Profit:", statistic.GetCurrentProfit())
 	fmt.Println("Difference Profit:", statistic.GetDifferenceProfit())
+
+	c := &CurrentAccount{}
+	s := &SavingsAccount{minBalance: 500}
+	ProcessAccount(c)
+	ProcessAccount(s)
 }
