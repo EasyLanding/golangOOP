@@ -194,6 +194,113 @@ func ProcessAccount(a Account) {
 	fmt.Printf("Balance: %.2f\n", a.Balance())
 }
 
+//Abstract bill in restorant
+
+type Order interface {
+	AddItem(item string, quantity int) error
+	RemoveItem(item string) error
+	GetOrderDetails() map[string]int
+}
+
+type DineInOrder struct {
+	orderDetails map[string]int
+}
+
+func (d *DineInOrder) AddItem(item string, quantity int) error {
+	if quantity <= 0 {
+		return errors.New("quantity should be greater than 0")
+	}
+	d.orderDetails[item] += quantity
+	return nil
+}
+
+func (d *DineInOrder) RemoveItem(item string) error {
+	if _, ok := d.orderDetails[item]; !ok {
+		return errors.New("item not found in order")
+	}
+	delete(d.orderDetails, item)
+	return nil
+}
+
+func (d *DineInOrder) GetOrderDetails() map[string]int {
+	return d.orderDetails
+}
+
+type TakeAwayOrder struct {
+	orderDetails map[string]int
+}
+
+func (t *TakeAwayOrder) AddItem(item string, quantity int) error {
+	if quantity <= 0 {
+		return errors.New("quantity should be greater than 0")
+	}
+	t.orderDetails[item] += quantity
+	return nil
+}
+
+func (t *TakeAwayOrder) RemoveItem(item string) error {
+	if _, ok := t.orderDetails[item]; !ok {
+		return errors.New("item not found in order")
+	}
+	delete(t.orderDetails, item)
+	return nil
+}
+
+func (t *TakeAwayOrder) GetOrderDetails() map[string]int {
+	return t.orderDetails
+}
+
+func ManageOrder(o Order) {
+	o.AddItem("Pizza", 2)
+	o.AddItem("Burger", 1)
+	o.RemoveItem("Pizza")
+	fmt.Println(o.GetOrderDetails())
+}
+
+// Abstract electron commerce
+type PaymentMethod interface {
+	Pay(amount float64) error
+}
+
+type CreditCard struct {
+	balance float64
+}
+
+func (c *CreditCard) Pay(amount float64) error {
+	if amount <= 0 {
+		return errors.New("недопустимая сумма платежа")
+	}
+	if c.balance < amount {
+		return errors.New("недостаточный баланс")
+	}
+	c.balance -= amount
+	fmt.Printf("Оплачено %.2f с помощью кредитной карты\n", amount)
+	return nil
+}
+
+type Bitcoin struct {
+	balance float64
+}
+
+func (b *Bitcoin) Pay(amount float64) error {
+	if amount <= 0 {
+		return errors.New("недопустимая сумма платежа")
+	}
+	if b.balance < amount {
+		return errors.New("недостаточный баланс")
+	}
+	b.balance -= amount
+	fmt.Printf("Оплачено %.2f с помощью биткоина\n", amount)
+	return nil
+}
+
+func ProcessPayment(p PaymentMethod, amount float64) {
+	err := p.Pay(amount)
+	if err != nil {
+		fmt.Println("Не удалось обработать платеж:", err)
+	}
+}
+
 func main() {
 	resultHelloWorld := helloWorld()
 
@@ -225,4 +332,18 @@ func main() {
 	s := &SavingsAccount{minBalance: 500}
 	ProcessAccount(c)
 	ProcessAccount(s)
+
+	//Abstract bill in restorant
+	dineIn := &DineInOrder{orderDetails: make(map[string]int)}
+	takeAway := &TakeAwayOrder{orderDetails: make(map[string]int)}
+
+	ManageOrder(dineIn)
+	ManageOrder(takeAway)
+
+	//Abstract electrone commerce
+	cc := &CreditCard{balance: 500.00}
+	btc := &Bitcoin{balance: 2.00}
+
+	ProcessPayment(cc, 200.00)
+	ProcessPayment(btc, 1.00)
 }
